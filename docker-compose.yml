@@ -4,8 +4,8 @@ services:
     image: postgres:15-alpine
     container_name: mynotes-postgres
     environment:
-      POSTGRES_USER: admin
-      POSTGRES_PASSWORD: admin123
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: mynotes_db
     ports:
       - "5432:5432"
@@ -20,7 +20,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      DATABASE_URL: postgresql://admin:admin123@postgres:5432/mynotes_db
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME}
     depends_on:
       - postgres
     volumes:
