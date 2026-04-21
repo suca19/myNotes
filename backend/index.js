@@ -1,6 +1,8 @@
 const express = require('express');
 const cors = require('cors');
 
+const authRoutes = require('./routes/auth');
+
 const app = express();
 const PORT = 3000;
 
@@ -34,6 +36,8 @@ app.post('/api/goals', (req, res) => {
   const { name, targetAmount, targetDate } = req.body;
   res.json({ success: true, goal: { id: Date.now(), name, targetAmount, targetDate } });
 });
+
+app.use('/api/auth', authRoutes);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
