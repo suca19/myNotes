@@ -38,7 +38,14 @@ app.post('/api/goals', (req, res) => {
 });
 
 app.use('/api/auth', authRoutes);
+const authenticateToken = require('./middleware/auth');
 
+app.get('/api/protected', authenticateToken, (req, res) => {
+    res.json({ 
+        message: 'You have access to protected data!',
+        user: req.user 
+    });
+});
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
