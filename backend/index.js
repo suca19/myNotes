@@ -37,15 +37,22 @@ app.post('/api/goals', (req, res) => {
   res.json({ success: true, goal: { id: Date.now(), name, targetAmount, targetDate } });
 });
 
+// Use auth routes
 app.use('/api/auth', authRoutes);
 const authenticateToken = require('./middleware/auth');
 
+// Example of a protected route
 app.get('/api/protected', authenticateToken, (req, res) => {
     res.json({ 
         message: 'You have access to protected data!',
         user: req.user 
     });
 });
+
+// Use expenses routes
+const expensesRoutes = require('./routes/expenses');
+app.use('/api/expenses', expensesRoutes);
+
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);
 });
