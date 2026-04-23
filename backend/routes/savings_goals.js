@@ -114,4 +114,56 @@ router.put('/:id', async (req, res) => {
     }
 });
 
+// DELETE /api/savings/:id - Delete a savings goal
+router.delete('/:id', async (req, res) => {
+    try {
+        const goalId = parseInt(req.params.id);
+        const userId = req.user.userId;
+
+        const checkResult = await pool.query(
+            'SELECT id FROM savings_goals WHERE id = $1 AND user_id = $2',
+            [goalId, userId]
+        );
+
+        if (checkResult.rows.length === 0) {
+            return res.status(404).json({ error: 'Savings goal not found' });
+        }
+
+        await pool.query(
+            'DELETE FROM savings_goals WHERE id = $1 AND user_id = $2',
+            [goalId, userId]
+        );
+
+        res.json({ success: true, message: 'Savings goal deleted successfully' });
+    } catch (error) {
+        console.error('DELETE /api/savings/:id error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
+// GET /api/savings/progress - Get progress summary for all goals
+router.get('/progress', async (req, res) => {
+    try {
+        const userId = req.user.userId;
+        const result = await pool.query(
+            `SELECT 
+                id, name, target_amount, current_amount, target_date,
+                ROUND((current_amount / target_amount) * 100, 2) as progress_percentage,
+                CASE 
+                    WHEN current_amount >= target_amount THEN 'achieved'
+                    WHEN current_amount > 0 THEN 'in_progress'
+                    ELSE 'not_started'
+                END as status
+             FROM savings_goals 
+             WHERE user_id = $1
+             ORDER BY target_date ASC`,
+            [userId]
+        );
+        res.json({ goals: result.rows });
+    } catch (error) {
+        console.error('GET /api/savings/progress error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 module.exports = router;
