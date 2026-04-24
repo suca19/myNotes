@@ -1,7 +1,12 @@
 const express = require('express');
 const cors = require('cors');
+require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
+const expensesRoutes = require('./routes/expenses');
+const fixedExpensesRoutes = require('./routes/fixedExpenses');
+const savingsGoalsRoutes = require('./routes/savingsGoals');
+const authenticateToken = require('./middleware/auth');
 
 const app = express();
 const PORT = 3000;
@@ -15,43 +20,24 @@ app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend is running!' });
 });
 
-// Expenses endpoints
-app.get('/api/expenses', (req, res) => {
-  // TODO: Get from database
-  res.json({ expenses: [] });
-});
-
-app.post('/api/expenses', (req, res) => {
-  // TODO: Save to database
-  const { amount, place, category } = req.body;
-  res.json({ success: true, expense: { id: Date.now(), amount, place, category } });
-});
-
-// Goals endpoints
-app.get('/api/goals', (req, res) => {
-  res.json({ goals: [] });
-});
-
-app.post('/api/goals', (req, res) => {
-  const { name, targetAmount, targetDate } = req.body;
-  res.json({ success: true, goal: { id: Date.now(), name, targetAmount, targetDate } });
-});
-
 // Use auth routes
 app.use('/api/auth', authRoutes);
-const authenticateToken = require('./middleware/auth');
 
-// Example of a protected route
-app.get('/api/protected', authenticateToken, (req, res) => {
-    res.json({ 
-        message: 'You have access to protected data!',
-        user: req.user 
-    });
-});
-
-// Use expenses routes
-const expensesRoutes = require('./routes/expenses');
+// Feature routes
 app.use('/api/expenses', expensesRoutes);
+app.use('/api/fixed-expenses', fixedExpensesRoutes);
+app.use('/api/savingsGoals', savingsGoalsRoutes);
+
+// Backward-compatible alias used by the current frontend client.
+app.use('/api/goals', savingsGoalsRoutes);
+
+// Example protected route
+app.get('/api/protected', authenticateToken, (req, res) => {
+  res.json({
+    message: 'You have access to protected data!',
+    user: req.user,
+  });
+});
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running on http://localhost:${PORT}`);

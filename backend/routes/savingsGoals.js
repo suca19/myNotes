@@ -7,6 +7,11 @@ const pool = new Pool({
     connectionString: process.env.DATABASE_URL,
 });
 
+function parseGoalId(idParam) {
+    const id = Number.parseInt(idParam, 10);
+    return Number.isInteger(id) && id > 0 ? id : null;
+}
+
 // All savings routes require authentication
 router.use(authenticateToken);
 
@@ -25,10 +30,36 @@ router.get('/', async (req, res) => {
     }
 });
 
+// GET /api/savings/:id - Get a single savings goal for the authenticated user
+router.get('/:id(\\d+)', async (req, res) => {
+    try {
+        const goalId = parseGoalId(req.params.id);
+        const userId = req.user.userId;
+
+        if (!goalId) {
+            return res.status(400).json({ error: 'Invalid savings goal id' });
+        }
+
+        const result = await pool.query(
+            'SELECT * FROM savings_goals WHERE id = $1 AND user_id = $2',
+            [goalId, userId]
+        );
+
+        if (result.rows.length === 0) {
+            return res.status(404).json({ error: 'Savings goal not found' });
+        }
+
+        res.json({ goal: result.rows[0] });
+    } catch (error) {
+        console.error('GET /api/savings/:id error:', error);
+        res.status(500).json({ error: 'Internal server error' });
+    }
+});
+
 // POST /api/savings - Create a new savings goal
 router.post('/', async (req, res) => {
     try {
-        const { name, target_amount, target_date, notes } = req.body;
+        const { name, target_amount, current_amount, target_date, notes } = req.body;
         const userId = req.user.userId;
 
         if (!name || !target_amount || !target_date) {
@@ -38,10 +69,10 @@ router.post('/', async (req, res) => {
         }
 
         const result = await pool.query(
-            `INSERT INTO savings_goals (user_id, name, target_amount, target_date, notes)
-             VALUES ($1, $2, $3, $4, $5)
-             RETURNING *`,
-            [userId, name, target_amount, target_date, notes || null]
+            `INSERT INTO savings_goals (user_id, name, target_amount, current_amount, target_date, notes)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            RETURNING *`,
+            [userId, name, target_amount, current_amount, target_date, notes || null]
         );
 
         res.status(201).json({ goal: result.rows[0] });
@@ -52,11 +83,15 @@ router.post('/', async (req, res) => {
 });
 
 // PUT /api/savings/:id - Update a savings goal
-router.put('/:id', async (req, res) => {
+router.put('/:id(\\d+)', async (req, res) => {
     try {
-        const goalId = parseInt(req.params.id);
+        const goalId = parseGoalId(req.params.id);
         const userId = req.user.userId;
         const { name, target_amount, current_amount, target_date, notes } = req.body;
+
+        if (!goalId) {
+            return res.status(400).json({ error: 'Invalid savings goal id' });
+        }
 
         // Check if goal exists and belongs to user
         const checkResult = await pool.query(
@@ -115,10 +150,14 @@ router.put('/:id', async (req, res) => {
 });
 
 // DELETE /api/savings/:id - Delete a savings goal
-router.delete('/:id', async (req, res) => {
+router.delete('/:id(\\d+)', async (req, res) => {
     try {
-        const goalId = parseInt(req.params.id);
+        const goalId = parseGoalId(req.params.id);
         const userId = req.user.userId;
+
+        if (!goalId) {
+            return res.status(400).json({ error: 'Invalid savings goal id' });
+        }
 
         const checkResult = await pool.query(
             'SELECT id FROM savings_goals WHERE id = $1 AND user_id = $2',
