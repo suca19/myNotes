@@ -6,6 +6,7 @@ const authRoutes = require('./routes/auth');
 const expensesRoutes = require('./routes/expenses');
 const fixedExpensesRoutes = require('./routes/fixedExpenses');
 const savingsGoalsRoutes = require('./routes/savingsGoals');
+const reportsRoutes = require('./routes/reports');
 const authenticateToken = require('./middleware/auth');
 
 const app = express();
@@ -27,6 +28,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/expenses', expensesRoutes);
 app.use('/api/fixed-expenses', fixedExpensesRoutes);
 app.use('/api/savingsGoals', savingsGoalsRoutes);
+app.use('/api/reports', reportsRoutes);
 
 // Backward-compatible alias used by the current frontend client.
 app.use('/api/goals', savingsGoalsRoutes);
