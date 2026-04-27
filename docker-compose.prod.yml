@@ -1,0 +1,8 @@
+services:
+  api:
+    build:
+      context: ./backend
+      target: prod
+    volumes: !reset []
+    environment:
+      NODE_ENV: production
