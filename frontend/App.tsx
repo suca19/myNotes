@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { Text, View, StyleSheet, TouchableOpacity } from 'react-native';
+import { healthCheck } from './api/client';
 
 export default function App() {
   const [backendStatus, setBackendStatus] = useState<string>('Checking...');
@@ -10,9 +11,8 @@ export default function App() {
 
   const checkBackend = async () => {
     try {
-      // Replace with your computer's IP
-      const response = await fetch('http://192.168.1.152:3000/api/health');
-      const data = await response.json();
+      const response = await healthCheck();
+      const data = response.data as { message?: string };
       setBackendStatus(`✅ Connected: ${data.message}`);
     } catch (error) {
       setBackendStatus('❌ Backend not connected');
