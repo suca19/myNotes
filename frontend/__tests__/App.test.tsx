@@ -1,38 +1,23 @@
-import { render, waitFor } from '@testing-library/react-native';
-import App from '../App';
-import { healthCheck } from '../api/client';
+import { render } from '@testing-library/react-native';
 
-jest.mock('../api/client', () => ({
-  healthCheck: jest.fn(),
+jest.mock('../contexts/AuthContext', () => ({
+  AuthProvider: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-const mockedHealthCheck = healthCheck as jest.MockedFunction<typeof healthCheck>;
+jest.mock('../navigation/RootNavigator', () => ({
+  RootNavigator: () => {
+    const React = require('react');
+    const { View } = require('react-native');
+    return React.createElement(View, { testID: 'mock-root-navigator' });
+  },
+}));
 
 describe('App', () => {
-  beforeEach(() => {
-    mockedHealthCheck.mockReset();
-  });
+  it('renders the authenticated app shell', () => {
+    const App = require('../App').default;
 
-  it('renders the backend status after a successful health check', async () => {
-    mockedHealthCheck.mockResolvedValue({ data: { message: 'Backend is running!' } } as never);
+    const { getByTestId } = render(<App />);
 
-    const { getByText } = render(<App />);
-
-    await waitFor(() => {
-      expect(getByText('✅ Connected: Backend is running!')).toBeTruthy();
-    });
-  });
-
-  it('shows the disconnected state when the request fails', async () => {
-    const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => undefined);
-    mockedHealthCheck.mockRejectedValue(new Error('offline'));
-
-    const { getByText } = render(<App />);
-
-    await waitFor(() => {
-      expect(getByText('❌ Backend not connected')).toBeTruthy();
-    });
-
-    consoleErrorSpy.mockRestore();
+    expect(getByTestId('mock-root-navigator')).toBeTruthy();
   });
 });
